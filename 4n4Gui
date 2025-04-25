@@ -1,0 +1,40 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local function createGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "BackdoorScannerGUI"
+    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 150)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+    frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    frame.Parent = screenGui
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = UDim2.new(0.5, -100, 0.5, -25)
+    button.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    button.Text = "Scan for Backdoors"
+    button.Parent = frame
+
+    return button
+end
+
+local function scanForBackdoors()
+    -- Aquí debes implementar la lógica para buscar backdoors en el juego.
+    -- Esto es solo un ejemplo y puede no ser efectivo para todos los tipos de backdoors.
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Script") or v:IsA("LocalScript") then
+            local scriptSource = v.Source
+            if string.find(scriptSource, "backdoor") then
+                warn("Backdoor found in script:", v.Name)
+                -- Aquí puedes implementar la lógica para utilizar el backdoor.
+            end
+        end
+    end
+end
+
+local button = createGUI()
+button.MouseButton1Click:Connect(scanForBackdoors)
