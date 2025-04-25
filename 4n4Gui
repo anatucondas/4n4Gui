@@ -1,163 +1,218 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
+-- Configuración GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "B0rdrSk1dGUI"
+gui.Name = "B0rdrSk1dGUI_Final"
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- No resetear GUI al morir
+gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-mainFrame.BackgroundTransparency = 0.3
-mainFrame.BorderColor3 = Color3.new(0, 1, 0)
-mainFrame.BorderSizePixel = 2
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BackgroundTransparency = 0.2
 mainFrame.Position = UDim2.new(0.05, 0, 0.25, 0)
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Size = UDim2.new(0, 250, 0, 400)
 mainFrame.ClipsDescendants = true
 
+-- Hacer draggable la GUI
+local dragging = false
+local dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Bordes y esquinas
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = mainFrame
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(255, 40, 40)
+border.Thickness = 2
+border.Parent = mainFrame
+
+-- Título
 local title = Instance.new("TextLabel")
-title.Text = "B0rdrSk1d V1"
+title.Text = "B0rdrSk1d V5"
 title.Font = Enum.Font.SciFi
-title.TextSize = 18
-title.TextColor3 = Color3.new(0, 1, 0)
+title.TextSize = 22
+title.TextColor3 = Color3.fromRGB(255, 0, 0)
 title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Size = UDim2.new(1, 0, 0, 40)
 title.Position = UDim2.new(0, 0, 0, 0)
+local titleGlow = Instance.new("UIGradient")
+titleGlow.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 0))
+})
+titleGlow.Rotation = 90
+titleGlow.Parent = title
 
-local grid = Instance.new("UIGridLayout")
-grid.CellPadding = UDim2.new(0, 5, 0, 5)
-grid.CellSize = UDim2.new(1, -10, 0, 30)
-grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-grid.SortOrder = Enum.SortOrder.LayoutOrder
-grid.Parent = mainFrame
+-- Layout principal
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = mainFrame
 
+gui.Parent = player.PlayerGui
 mainFrame.Parent = gui
 title.Parent = mainFrame
-gui.Parent = player.PlayerGui
 
--- Fly System
-local flying = false
-local flySpeed = 2
-local flyForce = Instance.new("BodyVelocity")
-local flyGyro = Instance.new("BodyGyro")
+-- Función para crear botones
+local function CreateButton(text)
+    local button = Instance.new("TextButton")
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.Size = UDim2.new(0.9, 0, 0, 35)
+    button.AutoButtonColor = false
+    local buttonCorner = Instance.new("UICorner") buttonCorner.CornerRadius = UDim.new(0, 6) buttonCorner.Parent = button
+    local buttonStroke = Instance.new("UIStroke") buttonStroke.Color = Color3.fromRGB(80, 0, 0) buttonStroke.Thickness = 1.5 buttonStroke.Parent = button
+    button.MouseEnter:Connect(function() button.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end)
+    button.MouseLeave:Connect(function() button.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end)
+    return button
+end
 
-local flyButton = Instance.new("TextButton")
-flyButton.Text = "FLY [F]"
-flyButton.TextColor3 = Color3.new(0, 1, 0)
-flyButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-flyButton.BorderSizePixel = 0
+-- ===== TOGGLE FLING =====
+local flingButton = CreateButton("TOGGLE FLING") flingButton.Parent = mainFrame
+local flinging, flingParts = false, {}
+local function ToggleFling()
+    if not player.Character then return end
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    flinging = not flinging
+    if flinging then
+        local bg = Instance.new("BodyGyro", root)
+        bg.MaxTorque = Vector3.new(1e9,1e9,1e9); bg.P=1e5; bg.D=1e3; bg.CFrame=root.CFrame
+        local bav = Instance.new("BodyAngularVelocity", root)
+        bav.MaxTorque=Vector3.new(1e9,1e9,1e9); bav.AngularVelocity=Vector3.new(0,1e4,0)
+        local conn = root.Touched:Connect(function(hit)
+            local h=hit.Parent:FindFirstChildOfClass("HumanoidRootPart")
+            if h then h.Velocity = CFrame.new(root.Position,h.Position).LookVector*500+Vector3.new(0,500,0) end
+        end)
+        flingParts={bg,bav,conn}
+    else
+        for _,v in ipairs(flingParts) do if typeof(v.Disconnect)=="function" then v:Disconnect() else v:Destroy() end end; flingParts={}
+    end
+end
+flingButton.MouseButton1Click:Connect(ToggleFling)
 
-local function toggleFly()
+-- ===== TOGGLE FLY =====
+local flyButton = CreateButton("TOGGLE FLY") flyButton.Parent = mainFrame
+local flying, flySpeed, flyParts = false,25,{}
+local function ToggleFly()
     flying = not flying
     if flying then
-        flyForce.Velocity = Vector3.new(0, 0, 0)
-        flyForce.MaxForce = Vector3.new(40000, 40000, 40000)
-        flyForce.Parent = player.Character.HumanoidRootPart
-        
-        flyGyro.D = 500
-        flyGyro.P = 10000
-        flyGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
-        flyGyro.CFrame = player.Character.HumanoidRootPart.CFrame
-        flyGyro.Parent = player.Character.HumanoidRootPart
-    else
-        flyForce:Destroy()
-        flyGyro:Destroy()
-    end
-end
-
-UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.F then
-        toggleFly()
-    end
-end)
-
-game:GetService("RunService").Heartbeat:Connect(function()
-    if flying and player.Character and player.Character.HumanoidRootPart then
-        local cam = workspace.CurrentCamera.CFrame
-        local moveVec = Vector3.new()
-        
-        if UIS:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + cam.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - cam.LookVector end
-        if UIS:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - cam.RightVector end
-        if UIS:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.RightVector end
-        
-        flyForce.Velocity = moveVec * flySpeed * 50
-        flyGyro.CFrame = cam
-    end
-end)
-
--- Tool TP
-local function createToolTP()
-    local tool = Instance.new("Tool")
-    tool.Name = "TPTool"
-    tool.RequiresHandle = false
-
-    tool.Activated:Connect(function()
         local root = player.Character.HumanoidRootPart
-        local target = mouse.Hit.Position + Vector3.new(0, 3, 0)
-        root.CFrame = CFrame.new(target)
-    end)
-
-    tool.Parent = player.Backpack
+        local bv = Instance.new("BodyVelocity", root)
+        bv.MaxForce=Vector3.new(1e9,1e9,1e9)
+        local bg = Instance.new("BodyGyro", root)
+        bg.MaxTorque=Vector3.new(1e9,1e9,1e9); bg.P=1e4; bg.D=1e3
+        bg.CFrame = CFrame.new(root.Position, root.Position + workspace.CurrentCamera.CFrame.LookVector)
+        flyParts={bv,bg}
+    else for _,v in ipairs(flyParts) do v:Destroy() end; flyParts={} end
 end
-
--- Fling
-local function fling()
-    if player.Character then
-        local root = player.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.AngularVelocity = Vector3.new(0, 5000, 0)
-            root.RotVelocity = Vector3.new(0, 5000, 0)
-            
-            root.Touched:Connect(function(hit)
-                if hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
-                    hit.Parent.HumanoidRootPart.Velocity = Vector3.new(math.random(-500,500), math.random(500,1000), math.random(-500,500))
-                end
-            end)
-        end
-    end
-end
-
--- TP to Player
-local tpBox = Instance.new("TextBox")
-tpBox.PlaceholderText = "Username"
-tpBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-tpBox.TextColor3 = Color3.new(0, 1, 0)
-
-local tpButton = Instance.new("TextButton")
-tpButton.Text = "TP"
-tpButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-tpButton.TextColor3 = Color3.new(0, 1, 0)
-
-local tpFrame = Instance.new("Frame")
-tpFrame.BackgroundTransparency = 1
-tpFrame.Size = UDim2.new(1, 0, 0, 30)
-local uiList = Instance.new("UIListLayout")
-uiList.FillDirection = Enum.FillDirection.Horizontal
-uiList.Parent = tpFrame
-
-tpBox.Parent = tpFrame
-tpButton.Parent = tpFrame
-tpFrame.Parent = mainFrame
-
-tpButton.MouseButton1Click:Connect(function()
-    local target = Players:FindFirstChild(tpBox.Text)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+flyButton.MouseButton1Click:Connect(ToggleFly)
+RunService.Heartbeat:Connect(function()
+    if flying and player.Character then
+        local root=player.Character.HumanoidRootPart; local cam=workspace.CurrentCamera
+        local mv=Vector3.new()
+        if UIS:IsKeyDown(Enum.KeyCode.W) then mv+=cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then mv-=cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then mv-=cam.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then mv+=cam.CFrame.RightVector end
+        flyParts[1].Velocity=mv*flySpeed
+        flyParts[2].CFrame=CFrame.new(root.Position, root.Position+cam.CFrame.LookVector)
     end
 end)
 
--- Break Chat (Experimental)
-local function breakChat()
-    for i = 1, 100 do
-        game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
-            string.char(math.random(1000, 10000)).."", "All")
-    end
+-- ===== TELEPORT & ANNOYING MODE =====
+local tpButton=CreateButton("TELEPORT TO") tpButton.Parent=mainFrame
+local annoyingButton=CreateButton("ANNOYING MODE") annoyingButton.Parent=mainFrame
+local controlFrame=Instance.new("Frame",mainFrame) controlFrame.BackgroundTransparency=1 controlFrame.Size=UDim2.new(0.9,0,0,150) controlFrame.Visible=false
+local playerFrame=Instance.new("ScrollingFrame",controlFrame) playerFrame.BackgroundColor3=Color3.fromRGB(20,20,20) playerFrame.Size=UDim2.new(0.7,0,1,0) playerFrame.CanvasSize=UDim2.new(0,0,0,0) playerFrame.ScrollBarThickness=5
+local stopButton=CreateButton("⏹ STOP") stopButton.Size=UDim2.new(0.25,0,0.3,0) stopButton.Position=UDim2.new(0.72,0,0.35,0) stopButton.TextColor3=Color3.fromRGB(255,50,50) stopButton.BackgroundColor3=Color3.fromRGB(50,0,0) stopButton.Visible=false stopButton.Parent=controlFrame
+local ctlL=Instance.new("UIListLayout",controlFrame) ctlL.FillDirection=Enum.FillDirection.Horizontal ctlL.Padding=UDim.new(0,10)
+local plyL=Instance.new("UIListLayout",playerFrame) plyL.Padding=UDim.new(0,5)
+local annoyingActive,targetPlayer,teleConn=false,nil,nil
+local function UpdatePlayerList(isAnnoy)
+    playerFrame.CanvasSize=UDim2.new(0,0,0,#Players:GetPlayers()*35)
+    for _,c in ipairs(playerFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    for _,t in pairs(Players:GetPlayers()) do if t~=player then
+        local b=CreateButton(t.Name) b.Size=UDim2.new(1,-10,0,30)
+        b.TextColor3=isAnnoy and Color3.fromRGB(255,0,0) or Color3.fromRGB(200,200,200)
+        b.BackgroundColor3=isAnnoy and Color3.fromRGB(30,0,0) or Color3.fromRGB(30,30,30)
+        b.Parent=playerFrame
+        b.MouseButton1Click:Connect(function()
+            if t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                if isAnnoy then
+                    targetPlayer=t; annoyingActive=true; stopButton.Visible=true
+                    teleConn=RunService.Heartbeat:Connect(function()
+                        if annoyingActive and targetPlayer and targetPlayer.Character then
+                            player.Character.HumanoidRootPart.CFrame=targetPlayer.Character.HumanoidRootPart.CFrame*CFrame.new(0,3,0)
+                        end
+                    end)
+                else
+                    player.Character.HumanoidRootPart.CFrame=t.Character.HumanoidRootPart.CFrame*CFrame.new(0,3,0)
+                    controlFrame.Visible=false
+                end
+            end
+        end)
+    end end
 end
+tpButton.MouseButton1Click:Connect(function() controlFrame.Visible=not controlFrame.Visible if controlFrame.Visible then playerFrame.Size=UDim2.new(1,0,1,0); stopButton.Visible=false; UpdatePlayerList(false) end end)
+annoyingButton.MouseButton1Click:Connect(function() controlFrame.Visible=true; playerFrame.Size=UDim2.new(0.7,0,1,0); stopButton.Visible=true; UpdatePlayerList(true) end)
+stopButton.MouseButton1Click:Connect(function() annoyingActive=false; if teleConn then teleConn:Disconnect() end; controlFrame.Visible=false end)
 
--- Add elements to GUI
-flyButton.Parent = mainFrame
-Instance.new("TextButton", mainFrame).Text = "Tool TP" MouseButton1Click:Connect(createToolTP)
-Instance.new("TextButton", mainFrame).Text = "FLING" MouseButton1Click:Connect(fling)
-Instance.new("TextButton", mainFrame).Text = "BREAK CHAT" MouseButton1Click:Connect(breakChat)
+-- ===== TOGGLE ESP (colores según TEAM) =====
+local espButton=CreateButton("TOGGLE ESP") espButton.Parent=mainFrame
+local espEnabled,espObjs=false,{}
+local function AddESP(t)
+    if not t.Character then return end
+    local root=t.Character:FindFirstChild("HumanoidRootPart") if not root then return end
+    local clr=t.Team and t.Team.TeamColor.Color or Color3.fromRGB(0,255,0)
+    local hl=Instance.new("Highlight",t.Character)
+    hl.Adornee=t.Character; hl.FillColor=clr; hl.FillTransparency=0.5; hl.OutlineColor=clr; hl.OutlineTransparency=0
+    local bill=Instance.new("BillboardGui",t.Character)
+    bill.Adornee=root; bill.Size=UDim2.new(0,100,0,30); bill.StudsOffset=Vector3.new(0,3,0); bill.AlwaysOnTop=true
+    local lbl=Instance.new("TextLabel",bill)
+    lbl.Size=UDim2.new(1,0,1,0); lbl.BackgroundTransparency=1; lbl.Text=t.Name; lbl.Font=Enum.Font.SourceSansBold; lbl.TextSize=14; lbl.TextColor3=clr
+    espObjs[t]={hl,bill}
+end
+local function RemoveESP(t)
+    local o=espObjs[t] if o then for _,v in pairs(o) do if v and v.Parent then v:Destroy() end end espObjs[t]=nil end
+end
+local function ToggleESP()
+    espEnabled=not espEnabled
+    if espEnabled then for _,o in pairs(Players:GetPlayers()) do if o~=player then AddESP(o) end end Players.PlayerAdded:Connect(function(o) if espEnabled and o~=player then AddESP(o) end end) Players.PlayerRemoving:Connect(function(o) RemoveESP(o) end)
+    else for o in pairs(espObjs) do RemoveESP(o) end end
+end
+espButton.MouseButton1Click:Connect(ToggleESP)
