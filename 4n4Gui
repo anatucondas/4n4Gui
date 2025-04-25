@@ -1,200 +1,163 @@
---[=[
- d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
-88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
-88      88    88    88            odD'      88      88    88 88ooo88 
-88  ooo 88    88    88          .88'        88      88    88 88~~~88 
-88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88 
- Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER
-]=]
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local UIS = game:GetService("UserInputService")
 
--- Instances: 33 | Scripts: 3 | Modules: 3
-local G2L = {}
+local gui = Instance.new("ScreenGui")
+gui.Name = "B0rdrSk1dGUI"
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- StarterGui.4n4GUI
-G2L["1"] = Instance.new("ScreenGui", game:GetService('CoreGui'):WaitForChild('RobloxGui'))
-G2L["1"]["Name"] = "4n4GUI"
-G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling
-G2L["1"]["ResetOnSpawn"] = false
+local mainFrame = Instance.new("Frame")
+mainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+mainFrame.BackgroundTransparency = 0.3
+mainFrame.BorderColor3 = Color3.new(0, 1, 0)
+mainFrame.BorderSizePixel = 2
+mainFrame.Position = UDim2.new(0.05, 0, 0.25, 0)
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.ClipsDescendants = true
 
--- StarterGui.4n4GUI.Frame
-G2L["2"] = Instance.new("Frame", G2L["1"])
-G2L["2"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
-G2L["2"]["Size"] = UDim2.new(0, 482, 0, 276)
-G2L["2"]["Position"] = UDim2.new(0.27320125699043274, 0, 0.3018597960472107, 0)
+local title = Instance.new("TextLabel")
+title.Text = "B0rdrSk1d V1"
+title.Font = Enum.Font.SciFi
+title.TextSize = 18
+title.TextColor3 = Color3.new(0, 1, 0)
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
 
--- StarterGui.4n4GUI.Frame.UIStroke
-G2L["3"] = Instance.new("UIStroke", G2L["2"])
-G2L["3"]["Color"] = Color3.fromRGB(255, 255, 255)
+local grid = Instance.new("UIGridLayout")
+grid.CellPadding = UDim2.new(0, 5, 0, 5)
+grid.CellSize = UDim2.new(1, -10, 0, 30)
+grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+grid.SortOrder = Enum.SortOrder.LayoutOrder
+grid.Parent = mainFrame
 
--- StarterGui.4n4GUI.Frame.UIStroke.UIGradient
-G2L["4"] = Instance.new("UIGradient", G2L["3"])
-G2L["4"]["Rotation"] = 50
-G2L["4"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 0, 255))}
+mainFrame.Parent = gui
+title.Parent = mainFrame
+gui.Parent = player.PlayerGui
 
--- StarterGui.4n4GUI.Frame.UICorner
-G2L["5"] = Instance.new("UICorner", G2L["2"])
+-- Fly System
+local flying = false
+local flySpeed = 2
+local flyForce = Instance.new("BodyVelocity")
+local flyGyro = Instance.new("BodyGyro")
 
--- StarterGui.4n4GUI.Frame.Scanner
-G2L["16"] = Instance.new("Frame", G2L["2"])
-G2L["16"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-G2L["16"]["BackgroundTransparency"] = 1
-G2L["16"]["Size"] = UDim2.new(0, 370, 0, 107)
-G2L["16"]["Position"] = UDim2.new(0.1166670024394989, 0, 0.30478382110595703, 0)
-G2L["16"]["Visible"] = true
-G2L["16"]["Name"] = "Scanner"
+local flyButton = Instance.new("TextButton")
+flyButton.Text = "FLY [F]"
+flyButton.TextColor3 = Color3.new(0, 1, 0)
+flyButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+flyButton.BorderSizePixel = 0
 
--- StarterGui.4n4GUI.Frame.Scanner.UIStroke
-G2L["17"] = Instance.new("UIStroke", G2L["16"])
-G2L["17"]["Color"] = Color3.fromRGB(255, 255, 255)
-
--- StarterGui.4n4GUI.Frame.Scanner.UIStroke.UIGradient
-G2L["18"] = Instance.new("UIGradient", G2L["17"])
-G2L["18"]["Rotation"] = 50
-G2L["18"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 255, 108)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 231, 171))}
-
--- StarterGui.4n4GUI.Frame.Scanner.UICorner
-G2L["19"] = Instance.new("UICorner", G2L["16"])
-
--- StarterGui.4n4GUI.Frame.Scanner.Button
-G2L["1a"] = Instance.new("TextButton", G2L["16"])
-G2L["1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-G2L["1a"]["TextSize"] = 43
-G2L["1a"]["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-G2L["1a"]["TextColor3"] = Color3.fromRGB(0, 0, 0)
-G2L["1a"]["Size"] = UDim2.new(1, 0, 1, 0)
-G2L["1a"]["Name"] = "Button"
-G2L["1a"]["Text"] = "Busca Un Backdoor"
-G2L["1a"]["BackgroundTransparency"] = 1
-
--- StarterGui.4n4GUI.Frame.Scanner.Button.UIGradient
-G2L["1b"] = Instance.new("UIGradient", G2L["1a"])
-G2L["1b"]["Rotation"] = 50
-G2L["1b"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 255, 108)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 231, 171))}
-
--- StarterGui.4n4GUI.Frame.Scanner.Button.UIStroke
-G2L["1c"] = Instance.new("UIStroke", G2L["1a"])
-G2L["1c"]["Color"] = Color3.fromRGB(255, 255, 255)
-
--- StarterGui.4n4GUI.LocalScript
-G2L["20"] = Instance.new("LocalScript", G2L["1"])
-
--- StarterGui.4n4GUI.Dragify
-G2L["21"] = Instance.new("LocalScript", G2L["1"])
-G2L["21"]["Name"] = "Dragify"
-
--- Require G2L wrapper
-local G2L_REQUIRE = require
-local G2L_MODULES = {}
-local function require(Module: ModuleScript)
-    local ModuleState = G2L_MODULES[Module]
-    if ModuleState then
-        if not ModuleState.Required then
-            ModuleState.Required = true
-            ModuleState.Value = ModuleState.Closure()
-        end
-        return ModuleState.Value
-    end
-    return G2L_REQUIRE(Module)
-end
-
-G2L_MODULES[G2L["21"]] = {
-    Closure = function()
-        local script = G2L["21"]
-        local UIS = game:GetService("UserInputService")
-        function dragify(Frame)
-            dragToggle = nil
-            local dragSpeed = 0.33
-            dragInput = nil
-            dragStart = nil
-            local dragPos = nil
-            function updateInput(input)
-                local Delta = input.Position - dragStart
-                local Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
-                game:GetService("TweenService"):Create(Frame, TweenInfo.new(0.15), {Position = Position}):Play()
-            end
-            Frame.InputBegan:Connect(function(input)
-                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and UIS:GetFocusedTextBox() == nil then
-                    dragToggle = true
-                    dragStart = input.Position
-                    startPos = Frame.Position
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            dragToggle = false
-                        end
-                    end)
-                end
-            end)
-            Frame.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                    dragInput = input
-                end
-            end)
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if input == dragInput and dragToggle then
-                    updateInput(input)
-                end
-            end)
-        end
-        dragify(script.Parent.Frame)
-    end
-}
-
-local function showNotification(title, text, duration)
-    local notification = Instance.new("ScreenGui")
-    notification.Name = "Notification"
-    notification.Parent = game.CoreGui
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 100)
-    frame.Position = UDim2.new(0, 10, 0, 10)
-    frame.BackgroundColor3 = Color3.new(0, 0, 0)
-    frame.BorderSizePixel = 0
-    frame.Parent = notification
-
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(0, 300, 0, 30)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.Text = title
-    titleLabel.TextScaled = true
-    titleLabel.Parent = frame
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 300, 0, 70)
-    textLabel.Position = UDim2.new(0, 0, 0, 30)
-    textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.Text = text
-    textLabel.TextScaled = true
-    textLabel.Parent = frame
-
-    wait(duration)
-    notification:Destroy()
-end
-
-local function scanForBackdoors()
-    local backdoorFound = false
-    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto", "RemoteEvent", "RemoteFunction", "exploit", "hack", "cheat"}
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-            local scriptSource = v.Source or ""
-            for _, keyword in ipairs(keywords) do
-                if string.find(string.lower(scriptSource), string.lower(keyword)) then
-                    backdoorFound = true
-                    warn("Backdoor found in script:", v.Name)
-                    -- Aquí puedes implementar la lógica para utilizar el backdoor.
-                end
-            end
-        end
-    end
-    if backdoorFound then
-        showNotification("Backdoor Encontrado", "Se ha encontrado un backdoor en el juego.", 5)
+local function toggleFly()
+    flying = not flying
+    if flying then
+        flyForce.Velocity = Vector3.new(0, 0, 0)
+        flyForce.MaxForce = Vector3.new(40000, 40000, 40000)
+        flyForce.Parent = player.Character.HumanoidRootPart
+        
+        flyGyro.D = 500
+        flyGyro.P = 10000
+        flyGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+        flyGyro.CFrame = player.Character.HumanoidRootPart.CFrame
+        flyGyro.Parent = player.Character.HumanoidRootPart
     else
-        showNotification("No se Encontró Backdoor", "No se encontraron backdoors en el juego.", 5)
+        flyForce:Destroy()
+        flyGyro:Destroy()
     end
 end
 
-G2L["1a"].MouseButton1Click:Connect(scanForBackdoors)
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleFly()
+    end
+end)
 
-return G2L["1"], require
+game:GetService("RunService").Heartbeat:Connect(function()
+    if flying and player.Character and player.Character.HumanoidRootPart then
+        local cam = workspace.CurrentCamera.CFrame
+        local moveVec = Vector3.new()
+        
+        if UIS:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + cam.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - cam.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - cam.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.RightVector end
+        
+        flyForce.Velocity = moveVec * flySpeed * 50
+        flyGyro.CFrame = cam
+    end
+end)
+
+-- Tool TP
+local function createToolTP()
+    local tool = Instance.new("Tool")
+    tool.Name = "TPTool"
+    tool.RequiresHandle = false
+
+    tool.Activated:Connect(function()
+        local root = player.Character.HumanoidRootPart
+        local target = mouse.Hit.Position + Vector3.new(0, 3, 0)
+        root.CFrame = CFrame.new(target)
+    end)
+
+    tool.Parent = player.Backpack
+end
+
+-- Fling
+local function fling()
+    if player.Character then
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.AngularVelocity = Vector3.new(0, 5000, 0)
+            root.RotVelocity = Vector3.new(0, 5000, 0)
+            
+            root.Touched:Connect(function(hit)
+                if hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
+                    hit.Parent.HumanoidRootPart.Velocity = Vector3.new(math.random(-500,500), math.random(500,1000), math.random(-500,500))
+                end
+            end)
+        end
+    end
+end
+
+-- TP to Player
+local tpBox = Instance.new("TextBox")
+tpBox.PlaceholderText = "Username"
+tpBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+tpBox.TextColor3 = Color3.new(0, 1, 0)
+
+local tpButton = Instance.new("TextButton")
+tpButton.Text = "TP"
+tpButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+tpButton.TextColor3 = Color3.new(0, 1, 0)
+
+local tpFrame = Instance.new("Frame")
+tpFrame.BackgroundTransparency = 1
+tpFrame.Size = UDim2.new(1, 0, 0, 30)
+local uiList = Instance.new("UIListLayout")
+uiList.FillDirection = Enum.FillDirection.Horizontal
+uiList.Parent = tpFrame
+
+tpBox.Parent = tpFrame
+tpButton.Parent = tpFrame
+tpFrame.Parent = mainFrame
+
+tpButton.MouseButton1Click:Connect(function()
+    local target = Players:FindFirstChild(tpBox.Text)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+    end
+end)
+
+-- Break Chat (Experimental)
+local function breakChat()
+    for i = 1, 100 do
+        game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
+            string.char(math.random(1000, 10000)).."", "All")
+    end
+end
+
+-- Add elements to GUI
+flyButton.Parent = mainFrame
+Instance.new("TextButton", mainFrame).Text = "Tool TP" MouseButton1Click:Connect(createToolTP)
+Instance.new("TextButton", mainFrame).Text = "FLING" MouseButton1Click:Connect(fling)
+Instance.new("TextButton", mainFrame).Text = "BREAK CHAT" MouseButton1Click:Connect(breakChat)
