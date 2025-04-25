@@ -175,7 +175,7 @@ end
 
 local function scanForBackdoors()
     local backdoorFound = false
-    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto", "RemoteEvent", "RemoteFunction"}
+    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto", "RemoteEvent", "RemoteFunction", "exploit", "hack", "cheat"}
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
             local scriptSource = v.Source or ""
