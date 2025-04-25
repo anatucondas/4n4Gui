@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function createGUI()
     local screenGui = Instance.new("ScreenGui")
@@ -59,13 +58,16 @@ end
 
 local function scanForBackdoors()
     local backdoorFound = false
+    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto"}
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("Script") or v:IsA("LocalScript") then
             local scriptSource = v.Source
-            if string.find(scriptSource, "backdoor") then
-                backdoorFound = true
-                warn("Backdoor found in script:", v.Name)
-                -- Aquí puedes implementar la lógica para utilizar el backdoor.
+            for _, keyword in ipairs(keywords) do
+                if string.find(string.lower(scriptSource), string.lower(keyword)) then
+                    backdoorFound = true
+                    warn("Backdoor found in script:", v.Name)
+                    -- Aquí puedes implementar la lógica para utilizar el backdoor.
+                end
             end
         end
     end
