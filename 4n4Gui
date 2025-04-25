@@ -1,26 +1,143 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+--[=[
+ d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
+88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
+88      88    88    88            odD'      88      88    88 88ooo88 
+88  ooo 88    88    88          .88'        88      88    88 88~~~88 
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88 
+ Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER
+]=]
 
-local function createGUI()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "4n4GUI"
-    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+-- Instances: 33 | Scripts: 3 | Modules: 3
+local G2L = {}
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 150)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -75)
-    frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    frame.Parent = screenGui
+-- StarterGui.4n4GUI
+G2L["1"] = Instance.new("ScreenGui", game:GetService('CoreGui'):WaitForChild('RobloxGui'))
+G2L["1"]["Name"] = "4n4GUI"
+G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling
+G2L["1"]["ResetOnSpawn"] = false
 
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 200, 0, 50)
-    button.Position = UDim2.new(0.5, -100, 0.5, -25)
-    button.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
-    button.Text = "Busca Un Backdoor"
-    button.Parent = frame
+-- StarterGui.4n4GUI.Frame
+G2L["2"] = Instance.new("Frame", G2L["1"])
+G2L["2"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
+G2L["2"]["Size"] = UDim2.new(0, 482, 0, 276)
+G2L["2"]["Position"] = UDim2.new(0.27320125699043274, 0, 0.3018597960472107, 0)
 
-    return button
+-- StarterGui.4n4GUI.Frame.UIStroke
+G2L["3"] = Instance.new("UIStroke", G2L["2"])
+G2L["3"]["Color"] = Color3.fromRGB(255, 255, 255)
+
+-- StarterGui.4n4GUI.Frame.UIStroke.UIGradient
+G2L["4"] = Instance.new("UIGradient", G2L["3"])
+G2L["4"]["Rotation"] = 50
+G2L["4"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 0, 255))}
+
+-- StarterGui.4n4GUI.Frame.UICorner
+G2L["5"] = Instance.new("UICorner", G2L["2"])
+
+-- StarterGui.4n4GUI.Frame.Scanner
+G2L["16"] = Instance.new("Frame", G2L["2"])
+G2L["16"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+G2L["16"]["BackgroundTransparency"] = 1
+G2L["16"]["Size"] = UDim2.new(0, 370, 0, 107)
+G2L["16"]["Position"] = UDim2.new(0.1166670024394989, 0, 0.30478382110595703, 0)
+G2L["16"]["Visible"] = true
+G2L["16"]["Name"] = "Scanner"
+
+-- StarterGui.4n4GUI.Frame.Scanner.UIStroke
+G2L["17"] = Instance.new("UIStroke", G2L["16"])
+G2L["17"]["Color"] = Color3.fromRGB(255, 255, 255)
+
+-- StarterGui.4n4GUI.Frame.Scanner.UIStroke.UIGradient
+G2L["18"] = Instance.new("UIGradient", G2L["17"])
+G2L["18"]["Rotation"] = 50
+G2L["18"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 255, 108)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 231, 171))}
+
+-- StarterGui.4n4GUI.Frame.Scanner.UICorner
+G2L["19"] = Instance.new("UICorner", G2L["16"])
+
+-- StarterGui.4n4GUI.Frame.Scanner.Button
+G2L["1a"] = Instance.new("TextButton", G2L["16"])
+G2L["1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+G2L["1a"]["TextSize"] = 43
+G2L["1a"]["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+G2L["1a"]["TextColor3"] = Color3.fromRGB(0, 0, 0)
+G2L["1a"]["Size"] = UDim2.new(1, 0, 1, 0)
+G2L["1a"]["Name"] = "Button"
+G2L["1a"]["Text"] = "Busca Un Backdoor"
+G2L["1a"]["BackgroundTransparency"] = 1
+
+-- StarterGui.4n4GUI.Frame.Scanner.Button.UIGradient
+G2L["1b"] = Instance.new("UIGradient", G2L["1a"])
+G2L["1b"]["Rotation"] = 50
+G2L["1b"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(255, 255, 108)), ColorSequenceKeypoint.new(1.000, Color3.fromRGB(255, 231, 171))}
+
+-- StarterGui.4n4GUI.Frame.Scanner.Button.UIStroke
+G2L["1c"] = Instance.new("UIStroke", G2L["1a"])
+G2L["1c"]["Color"] = Color3.fromRGB(255, 255, 255)
+
+-- StarterGui.4n4GUI.LocalScript
+G2L["20"] = Instance.new("LocalScript", G2L["1"])
+
+-- StarterGui.4n4GUI.Dragify
+G2L["21"] = Instance.new("LocalScript", G2L["1"])
+G2L["21"]["Name"] = "Dragify"
+
+-- Require G2L wrapper
+local G2L_REQUIRE = require
+local G2L_MODULES = {}
+local function require(Module: ModuleScript)
+    local ModuleState = G2L_MODULES[Module]
+    if ModuleState then
+        if not ModuleState.Required then
+            ModuleState.Required = true
+            ModuleState.Value = ModuleState.Closure()
+        end
+        return ModuleState.Value
+    end
+    return G2L_REQUIRE(Module)
 end
+
+G2L_MODULES[G2L["21"]] = {
+    Closure = function()
+        local script = G2L["21"]
+        local UIS = game:GetService("UserInputService")
+        function dragify(Frame)
+            dragToggle = nil
+            local dragSpeed = 0.33
+            dragInput = nil
+            dragStart = nil
+            local dragPos = nil
+            function updateInput(input)
+                local Delta = input.Position - dragStart
+                local Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
+                game:GetService("TweenService"):Create(Frame, TweenInfo.new(0.15), {Position = Position}):Play()
+            end
+            Frame.InputBegan:Connect(function(input)
+                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and UIS:GetFocusedTextBox() == nil then
+                    dragToggle = true
+                    dragStart = input.Position
+                    startPos = Frame.Position
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            dragToggle = false
+                        end
+                    end)
+                end
+            end)
+            Frame.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    dragInput = input
+                end
+            end)
+            game:GetService("UserInputService").InputChanged:Connect(function(input)
+                if input == dragInput and dragToggle then
+                    updateInput(input)
+                end
+            end)
+        end
+        dragify(script.Parent.Frame)
+    end
+}
 
 local function showNotification(title, text, duration)
     local notification = Instance.new("ScreenGui")
@@ -58,10 +175,10 @@ end
 
 local function scanForBackdoors()
     local backdoorFound = false
-    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto"}
+    local keywords = {"backdoor", "puerta trasera", "bypass", "accesso secreto", "RemoteEvent", "RemoteFunction"}
     for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Script") or v:IsA("LocalScript") then
-            local scriptSource = v.Source
+        if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            local scriptSource = v.Source or ""
             for _, keyword in ipairs(keywords) do
                 if string.find(string.lower(scriptSource), string.lower(keyword)) then
                     backdoorFound = true
@@ -78,5 +195,6 @@ local function scanForBackdoors()
     end
 end
 
-local button = createGUI()
-button.MouseButton1Click:Connect(scanForBackdoors)
+G2L["1a"].MouseButton1Click:Connect(scanForBackdoors)
+
+return G2L["1"], require
