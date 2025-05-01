@@ -10,7 +10,7 @@ screenGui.ResetOnSpawn = false
 
 -- Frame principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 320)
+mainFrame.Size = UDim2.new(0, 300, 0, 320)    -- altura aumentada para 4 switches
 mainFrame.Position = UDim2.new(0.5, -150, 0.5, -160)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 60)
 mainFrame.BorderColor3 = Color3.fromRGB(255, 215, 0)
@@ -23,7 +23,7 @@ mainFrame.Parent = screenGui
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "Yohan guapo mua"
+title.Text = "✨ Old A Bizarre TP ✨"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.Arcade
 title.TextScaled = true
@@ -43,7 +43,7 @@ defaults = {
 }
 
 -- Función para crear fila con switch deslizable
-local function createTPRow(key, targetName, displayText, posY)
+local function createTPRow(key, toolName, displayText, posY)
     tpStates[key] = false
 
     -- Etiqueta descriptiva
@@ -82,31 +82,16 @@ local function createTPRow(key, targetName, displayText, posY)
     toggleBtn.Text = ""
     toggleBtn.Parent = switchFrame
 
-    -- Acción de teletransporte (soporta Tools y Models)
+    -- Acción de teletransporte
     local function teleportLoop()
         while tpStates[key] do
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj.Name == targetName then
-                    local cf
-                    if obj:IsA("Tool") and obj:FindFirstChild("Handle") then
-                        cf = obj.Handle.CFrame
-                    elseif obj:IsA("Model") then
-                        -- usa PrimaryPart o primer BasePart
-                        if obj.PrimaryPart then
-                            cf = obj.PrimaryPart.CFrame
-                        else
-                            for _, c in ipairs(obj:GetChildren()) do
-                                if c:IsA("BasePart") then cf = c.CFrame break end
-                            end
-                        end
-                    end
-                    if cf then
-                        local char = player.Character or player.CharacterAdded:Wait()
-                        local root = char:FindFirstChild("HumanoidRootPart")
-                        if root then
-                            root.CFrame = cf + Vector3.new(0, 5, 0)
-                            task.wait(0.3)
-                        end
+            for _, tool in ipairs(workspace:GetDescendants()) do
+                if tool:IsA("Tool") and tool.Name == toolName and tool:FindFirstChild("Handle") then
+                    local char = player.Character or player.CharacterAdded:Wait()
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        root.CFrame = tool.Handle.CFrame + Vector3.new(0, 5, 0)
+                        task.wait(0.3)
                     end
                 end
             end
@@ -129,16 +114,16 @@ local function createTPRow(key, targetName, displayText, posY)
     end)
 end
 
--- Crear opciones
+-- Crear opciones de TP
 createTPRow("Rokaka", "Rokakaka Fruit", "Go to Rokaka", 50)
 createTPRow("Arrow", "Arrow", "Go to Arrow", 100)
-createTPRow("Banknote", "Banknote", "Go to Banknote", 150)
 
--- Opción Bypass Kick (tercer switch)
+-- Opción Bypass Kick
 local function createBypassRow(displayText, posY)
     tpStates["BypassKick"] = false
 
-    local label = Instance.new("TextLabel", mainFrame)
+    -- Label
+    local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0, 160, 0, 40)
     label.Position = UDim2.new(0, 20, 0, posY)
     label.BackgroundTransparency = 1
@@ -148,22 +133,30 @@ local function createBypassRow(displayText, posY)
     label.TextScaled = true
     label.TextStrokeTransparency = 0
     label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    label.Parent = mainFrame
 
-    local switchFrame = Instance.new("Frame", mainFrame)
+    -- Switch frame
+    local switchFrame = Instance.new("Frame")
     switchFrame.Size = UDim2.new(0, defaults.width, 0, defaults.height)
     switchFrame.Position = UDim2.new(0, 200, 0, posY + 5)
     switchFrame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    switchFrame.Parent = mainFrame
 
-    local knob = Instance.new("Frame", switchFrame)
+    -- Knob
+    local knob = Instance.new("Frame")
     knob.Size = UDim2.new(0, defaults.knobSize, 0, defaults.knobSize)
     knob.Position = UDim2.new(0, defaults.knobMargin, 0, defaults.knobMargin)
     knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.Parent = switchFrame
 
-    local btn = Instance.new("TextButton", switchFrame)
+    -- Invisible button
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = ""
+    btn.Parent = switchFrame
 
+    -- Conexión y lógica de bypass
     local conn
     btn.MouseButton1Click:Connect(function()
         tpStates["BypassKick"] = not tpStates["BypassKick"]
@@ -183,7 +176,11 @@ local function createBypassRow(displayText, posY)
     end)
 end
 
-createBypassRow("Bypass Kick", 200)
+-- Llamar a createBypassRow correctamente
+createBypassRow("Bypass Kick", 150)
+
+-- Nueva opción: Go to Banknote
+createTPRow("Banknote", "Banknote", "Go to Banknote", 200)
 
 -- Botón cerrar GUI
 local closeButton = Instance.new("TextButton")
