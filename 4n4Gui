@@ -1,200 +1,150 @@
--- LocalScript para StarterPlayerScripts o StarterGui
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local UIS = game:GetService("UserInputService")
+local noclipEnabled = false
+local savePoint = nil
 
--- Crear GUI principal
-local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.Name = "JoJoTPGUI"
+-- Crear GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportGui"
 screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Frame principal
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 320)    -- altura aumentada para 4 switches
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -160)
-mainFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 60)
-mainFrame.BorderColor3 = Color3.fromRGB(255, 215, 0)
-mainFrame.BorderSizePixel = 4
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 400, 0, 330)
+frame.Position = UDim2.new(0.5, -200, 0.5, -165)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
 
--- Título
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Text = "✨ Old A Bizarre TP ✨"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.Arcade
-title.TextScaled = true
-title.TextStrokeTransparency = 0
-title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-title.Parent = mainFrame
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 15)
+frameCorner.Parent = frame
 
--- Estados de switches
-tpStates = {}
-tpLoops = {}
+-- Ocultar/mostrar con G
+local guiVisible = true
+UIS.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.G then
+		guiVisible = not guiVisible
+		frame.Visible = guiVisible
+	end
+end)
 
-defaults = {
-    width = 60,
-    height = 30,
-    knobSize = 28,
-    knobMargin = 1
-}
+-- Barra superior con título e icono
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
 
--- Función para crear fila con switch deslizable
-local function createTPRow(key, toolName, displayText, posY)
-    tpStates[key] = false
+local titleBarCorner = Instance.new("UICorner")
+titleBarCorner.CornerRadius = UDim.new(0, 15)
+titleBarCorner.Parent = titleBar
 
-    -- Etiqueta descriptiva
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 160, 0, 40)
-    label.Position = UDim2.new(0, 20, 0, posY)
-    label.BackgroundTransparency = 1
-    label.Text = displayText
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.Arcade
-    label.TextScaled = true
-    label.TextStrokeTransparency = 0
-    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    label.Parent = mainFrame
+local icon = Instance.new("ImageLabel")
+icon.Size = UDim2.new(0, 40, 0, 40)
+icon.Position = UDim2.new(0, 15, 0, 5)
+icon.BackgroundTransparency = 1
+icon.Image = "rbxassetid://13414610239"
+icon.Parent = titleBar
 
-    -- Base del switch
-    local switchFrame = Instance.new("Frame")
-    switchFrame.Size = UDim2.new(0, defaults.width, 0, defaults.height)
-    switchFrame.Position = UDim2.new(0, 200, 0, posY + 5)
-    switchFrame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-    switchFrame.BorderSizePixel = 0
-    switchFrame.Parent = mainFrame
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -70, 1, 0)
+titleLabel.Position = UDim2.new(0, 70, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "FR33DYK1DD Scripting GUI"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 22
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
 
-    -- Knob deslizable
-    local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, defaults.knobSize, 0, defaults.knobSize)
-    knob.Position = UDim2.new(0, defaults.knobMargin, 0, defaults.knobMargin)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    knob.BorderSizePixel = 0
-    knob.Parent = switchFrame
+local function createButton(text, position)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 370, 0, 55)
+	btn.Position = position
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = false
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 20
+	btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+	btn.Text = text
+	btn.Parent = frame
 
-    -- Botón transparente para clic
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
-    toggleBtn.BackgroundTransparency = 1
-    toggleBtn.Text = ""
-    toggleBtn.Parent = switchFrame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 12)
+	corner.Parent = btn
 
-    -- Acción de teletransporte
-    local function teleportLoop()
-        while tpStates[key] do
-            for _, tool in ipairs(workspace:GetDescendants()) do
-                if tool:IsA("Tool") and tool.Name == toolName and tool:FindFirstChild("Handle") then
-                    local char = player.Character or player.CharacterAdded:Wait()
-                    local root = char:FindFirstChild("HumanoidRootPart")
-                    if root then
-                        root.CFrame = tool.Handle.CFrame + Vector3.new(0, 5, 0)
-                        task.wait(0.3)
-                    end
-                end
-            end
-            task.wait(1)
-        end
-    end
+	btn.MouseEnter:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+	end)
+	btn.MouseLeave:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	end)
 
-    -- Conexión del toggle
-    toggleBtn.MouseButton1Click:Connect(function()
-        tpStates[key] = not tpStates[key]
-        if tpStates[key] then
-            switchFrame.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-            knob:TweenPosition(UDim2.new(0, defaults.width - defaults.knobSize - defaults.knobMargin, 0, defaults.knobMargin), "Out", "Quad", 0.2, true)
-            tpLoops[key] = coroutine.create(teleportLoop)
-            coroutine.resume(tpLoops[key])
-        else
-            switchFrame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-            knob:TweenPosition(UDim2.new(0, defaults.knobMargin, 0, defaults.knobMargin), "Out", "Quad", 0.2, true)
-        end
-    end)
+	return btn
 end
 
--- Crear opciones de TP
-createTPRow("Rokaka", "Rokakaka Fruit", "Go to Rokaka", 50)
-createTPRow("Arrow", "Arrow", "Go to Arrow", 100)
+local noclipBtn = createButton("Toggle Noclip", UDim2.new(0, 15, 0, 70))
+local giveToolBtn = createButton("Give Teleport Tool", UDim2.new(0, 15, 0, 135))
+local savePointBtn = createButton("BaseSavePoint", UDim2.new(0, 15, 0, 200))
+local tpToSavePointBtn = createButton("TPToBaseSavePoint", UDim2.new(0, 15, 0, 265))
 
--- Opción Bypass Kick
-local function createBypassRow(displayText, posY)
-    tpStates["BypassKick"] = false
+noclipBtn.MouseButton1Click:Connect(function()
+	noclipEnabled = not noclipEnabled
+	noclipBtn.Text = noclipEnabled and "Disable Noclip" or "Enable Noclip"
+end)
 
-    -- Label
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 160, 0, 40)
-    label.Position = UDim2.new(0, 20, 0, posY)
-    label.BackgroundTransparency = 1
-    label.Text = displayText
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.Arcade
-    label.TextScaled = true
-    label.TextStrokeTransparency = 0
-    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    label.Parent = mainFrame
+game:GetService("RunService").Stepped:Connect(function()
+	if player.Character then
+		for _, part in pairs(player.Character:GetChildren()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = not noclipEnabled
+			end
+		end
+	end
+end)
 
-    -- Switch frame
-    local switchFrame = Instance.new("Frame")
-    switchFrame.Size = UDim2.new(0, defaults.width, 0, defaults.height)
-    switchFrame.Position = UDim2.new(0, 200, 0, posY + 5)
-    switchFrame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-    switchFrame.Parent = mainFrame
+local toolName = "TeleportTool"
 
-    -- Knob
-    local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, defaults.knobSize, 0, defaults.knobSize)
-    knob.Position = UDim2.new(0, defaults.knobMargin, 0, defaults.knobMargin)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    knob.Parent = switchFrame
+local function giveTeleportTool()
+	local backpack = player:WaitForChild("Backpack")
+	if backpack:FindFirstChild(toolName) then return end
 
-    -- Invisible button
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundTransparency = 1
-    btn.Text = ""
-    btn.Parent = switchFrame
+	local tool = Instance.new("Tool")
+	tool.Name = toolName
+	tool.RequiresHandle = false
+	tool.Parent = backpack
 
-    -- Conexión y lógica de bypass
-    local conn
-    btn.MouseButton1Click:Connect(function()
-        tpStates["BypassKick"] = not tpStates["BypassKick"]
-        if tpStates["BypassKick"] then
-            switchFrame.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-            knob:TweenPosition(UDim2.new(0, defaults.width - defaults.knobSize - defaults.knobMargin, 0, defaults.knobMargin), "Out", "Quad", 0.2, true)
-            conn = Players.PlayerRemoving:Connect(function(leaving)
-                if leaving == player then
-                    TeleportService:TeleportAsync(game.PlaceId, {player})
-                end
-            end)
-        else
-            switchFrame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-            knob:TweenPosition(UDim2.new(0, defaults.knobMargin, 0, defaults.knobMargin), "Out", "Quad", 0.2, true)
-            if conn then conn:Disconnect() end
-        end
-    end)
+	tool.Activated:Connect(function()
+		local targetPos = mouse.Hit and mouse.Hit.p
+		if targetPos and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+		end
+	end)
 end
 
--- Llamar a createBypassRow correctamente
-createBypassRow("Bypass Kick", 150)
+giveToolBtn.MouseButton1Click:Connect(giveTeleportTool)
 
--- Nueva opción: Go to Banknote
-createTPRow("Banknote", "Banknote", "Go to Banknote", 200)
+savePointBtn.MouseButton1Click:Connect(function()
+	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		savePoint = player.Character.HumanoidRootPart.Position
+		savePointBtn.Text = "BaseSavePoint (Guardado)"
+		wait(2)
+		savePointBtn.Text = "BaseSavePoint"
+	end
+end)
 
--- Botón cerrar GUI
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -35, 0, 5)
-closeButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-closeButton.Text = "X"
-closeButton.Font = Enum.Font.Arcade
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.TextScaled = true
-closeButton.TextStrokeTransparency = 0
-closeButton.Parent = mainFrame
-
-closeButton.MouseButton1Click:Connect(function()
-    for k in pairs(tpStates) do tpStates[k] = false end
-    screenGui:Destroy()
+tpToSavePointBtn.MouseButton1Click:Connect(function()
+	if savePoint and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		player.Character.HumanoidRootPart.CFrame = CFrame.new(savePoint + Vector3.new(0, 3, 0))
+	else
+		tpToSavePointBtn.Text = "No hay BaseSavePoint"
+		wait(2)
+		tpToSavePointBtn.Text = "TPToBaseSavePoint"
+	end
 end)
