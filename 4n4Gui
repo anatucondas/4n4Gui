@@ -1,8 +1,21 @@
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
 local UIS = game:GetService("UserInputService")
+local Http = game:GetService("HttpService")
+local TPS = game:GetService("TeleportService")
 local noclipEnabled = false
 local savePoint = nil
+
+local function getServers()
+	local placeId = game.PlaceId
+	local servers = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+	local raw = game:HttpGet(servers)
+	return Http:JSONDecode(raw).data
+end
+
+local function teleportToServer(serverId)
+	TPS:TeleportToPlaceInstance(game.PlaceId, serverId, player)
+end
 
 -- Crear GUI
 local screenGui = Instance.new("ScreenGui")
@@ -11,8 +24,8 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 400, 0, 330)
-frame.Position = UDim2.new(0.5, -200, 0.5, -165)
+frame.Size = UDim2.new(0, 400, 0, 460) -- Aumentado para más botones
+frame.Position = UDim2.new(0.5, -200, 0.5, -230)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -89,10 +102,15 @@ local function createButton(text, position)
 	return btn
 end
 
-local noclipBtn = createButton("Toggle Noclip", UDim2.new(0, 15, 0, 70))
-local giveToolBtn = createButton("Give Teleport Tool", UDim2.new(0, 15, 0, 135))
-local savePointBtn = createButton("BaseSavePoint", UDim2.new(0, 15, 0, 200))
-local tpToSavePointBtn = createButton("TPToBaseSavePoint", UDim2.new(0, 15, 0, 265))
+local yStart = 70
+local spacing = 65
+
+local noclipBtn = createButton("Toggle Noclip", UDim2.new(0, 15, 0, yStart))
+local giveToolBtn = createButton("Give Teleport Tool", UDim2.new(0, 15, 0, yStart + spacing * 1))
+local savePointBtn = createButton("Save Base Point", UDim2.new(0, 15, 0, yStart + spacing * 2))
+local tpToSavePointBtn = createButton("TP To Base Point", UDim2.new(0, 15, 0, yStart + spacing * 3))
+local lowServerBtn = createButton("Join Low Server", UDim2.new(0, 15, 0, yStart + spacing * 4))
+local randomServerBtn = createButton("Join Random Server", UDim2.new(0, 15, 0, yStart + spacing * 5))
 
 noclipBtn.MouseButton1Click:Connect(function()
 	noclipEnabled = not noclipEnabled
@@ -133,9 +151,9 @@ giveToolBtn.MouseButton1Click:Connect(giveTeleportTool)
 savePointBtn.MouseButton1Click:Connect(function()
 	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 		savePoint = player.Character.HumanoidRootPart.Position
-		savePointBtn.Text = "BaseSavePoint (Guardado)"
+		savePointBtn.Text = "Base Point Saved"
 		wait(2)
-		savePointBtn.Text = "BaseSavePoint"
+		savePointBtn.Text = "Save Base Point"
 	end
 end)
 
@@ -143,8 +161,23 @@ tpToSavePointBtn.MouseButton1Click:Connect(function()
 	if savePoint and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 		player.Character.HumanoidRootPart.CFrame = CFrame.new(savePoint + Vector3.new(0, 3, 0))
 	else
-		tpToSavePointBtn.Text = "No hay BaseSavePoint"
+		tpToSavePointBtn.Text = "No Base Point"
 		wait(2)
-		tpToSavePointBtn.Text = "TPToBaseSavePoint"
+		tpToSavePointBtn.Text = "TP To Base Point"
+	end
+end)
+
+lowServerBtn.MouseButton1Click:Connect(function()
+	local servers = getServers()
+	if #servers > 0 then
+		teleportToServer(servers[1].id)
+	end
+end)
+
+randomServerBtn.MouseButton1Click:Connect(function()
+	local servers = getServers()
+	if #servers > 0 then
+		local randomServer = servers[math.random(1, #servers)]
+		teleportToServer(randomServer.id)
 	end
 end)
