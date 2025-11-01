@@ -1,5 +1,299 @@
 local player = game.Players.LocalPlayer
-local gui = player.PlayerGui:FindFirstChild("MinimalESPGui")
-if gui then
-    gui:Destroy()
+local camera = workspace.CurrentCamera
+local espEnabled = false
+local fovEnabled = false
+local aimbotEnabled = false
+local fovSize = 200
+local espObjects = {}
+local targets = {}
+local dragging = false
+local dragStart, startPos
+local userInputService = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AdvancedESPGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 180, 0, 100)
+frame.Position = UDim2.new(0.02, 0, 0.85, 0)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0
+frame.Active = true
+frame.Parent = gui
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
+}
+gradient.Parent = frame
+
+local function makeButton(text, xPos, yPos, sizeX, sizeY)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, sizeX or 60, 0, sizeY or 50)
+    btn.Position = UDim2.new(0, xPos, 0, yPos)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 0.5
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.Text = text
+    btn.Parent = frame
+    return btn
 end
+
+local espButton = makeButton("ESP", 0, 0)
+local fovButton = makeButton("FOV", 60, 0)
+local aimbotButton = makeButton("Aim", 120, 0)
+local plusButton = makeButton("+", 0, 50, 30, 50)
+local minusButton = makeButton("-", 30, 50, 30, 50)
+local closeButton = makeButton("X", 60, 50, 120, 50)
+
+local fovCircle = Instance.new("Frame")
+fovCircle.Name = "FOVCircle"
+fovCircle.Size = UDim2.new(0, fovSize * 2, 0, fovSize * 2)
+fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+fovCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+fovCircle.BackgroundTransparency = 1
+fovCircle.Visible = false
+fovCircle.Parent = gui
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(255, 255, 255)
+stroke.Parent = fovCircle
+
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = fovCircle
+
+-- Implementar dragging manualmente para el frame
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+userInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+local function updateTargets()
+    targets = {}
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(targets, plr.Character)
+        end
+    end
+end
+
+local function createBillboard(target)
+    if not target or not target:FindFirstChild("Head") or not target:FindFirstChild("HumanoidRootPart") then return end
+    if espObjects[target] then return end  -- Evitar duplicados
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESPTag"
+    billboard.Adornee = target.Head
+    billboard.AlwaysOnTop = true
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextStrokeTransparency = 0
+    label.TextStrokeColor3 = Color3.new(0, 0, 0)
+    label.Parent = billboard
+
+    billboard.Parent = target
+    espObjects[target] = {billboard = billboard, label = label}
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESPHighlight"
+    highlight.Adornee = target
+    highlight.FillTransparency = 0.3
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineTransparency = 1
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = target
+    espObjects[target].highlight = highlight
+
+    local tracer = Drawing.new("Line")
+    tracer.Thickness = 2
+    tracer.Color = Color3.fromRGB(255, 0, 0)
+    tracer.Transparency = 0.5
+    tracer.Visible = false  -- Inicialmente invisible
+    espObjects[target].tracer = tracer
+
+    -- Loop para actualizar texto y verificar existencia
+    task.spawn(function()
+        while espEnabled and target.Parent and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Head") do
+            local dist = 0
+            local health = 0
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                dist = math.floor((player.Character.HumanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude)
+            end
+            if target:FindFirstChildOfClass("Humanoid") then
+                health = math.floor(target.Humanoid.Health)
+            end
+            label.Text = string.format("%s [%dm] [%d HP]", target.Name, dist, health)
+            task.wait(0.05)
+        end
+        -- Limpiar cuando termine
+        if billboard then billboard:Destroy() end
+        if highlight then highlight:Destroy() end
+        if tracer then tracer:Remove() end
+        espObjects[target] = nil
+    end)
+end
+
+local function toggleESP()
+    espEnabled = not espEnabled
+    for target, objs in pairs(espObjects) do
+        if objs.billboard then objs.billboard:Destroy() end
+        if objs.highlight then objs.highlight:Destroy() end
+        if objs.tracer then objs.tracer:Remove() end
+    end
+    espObjects = {}
+
+    if espEnabled then
+        updateTargets()
+        for _, target in ipairs(targets) do
+            createBillboard(target)
+        end
+    end
+end
+espButton.MouseButton1Click:Connect(toggleESP)
+
+local function toggleFOV()
+    fovEnabled = not fovEnabled
+    fovCircle.Visible = fovEnabled
+end
+fovButton.MouseButton1Click:Connect(toggleFOV)
+
+local function resizeFOV(increase)
+    if not fovEnabled then return end
+    if increase then
+        fovSize = math.min(500, fovSize + 20)
+    else
+        fovSize = math.max(50, fovSize - 20)
+    end
+    fovCircle.Size = UDim2.new(0, fovSize * 2, 0, fovSize * 2)
+end
+plusButton.MouseButton1Click:Connect(function() resizeFOV(true) end)
+minusButton.MouseButton1Click:Connect(function() resizeFOV(false) end)
+
+local function toggleAimbot()
+    aimbotEnabled = not aimbotEnabled
+end
+aimbotButton.MouseButton1Click:Connect(toggleAimbot)
+
+closeButton.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+local time = 0
+runService.RenderStepped:Connect(function(dt)
+    time = time + dt
+    local rgbColor = Color3.fromHSV(time % 1, 1, 1)
+    local screenSize = camera.ViewportSize
+    local center = Vector2.new(screenSize.X / 2, screenSize.Y / 2)
+
+    if aimbotEnabled and userInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local bestTarget = nil
+        local bestDist = math.huge
+
+        for _, target in ipairs(targets) do
+            if target.Parent and target:FindFirstChild("Head") and target:FindFirstChild("HumanoidRootPart") then
+                local screenPos, onScreen = camera:WorldToViewportPoint(target.Head.Position)
+                if onScreen and screenPos.Z > 0 then
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                    if dist <= fovSize and dist < bestDist then
+                        bestDist = dist
+                        bestTarget = target
+                    end
+                end
+            end
+        end
+
+        if bestTarget then
+            local targetPos = bestTarget.Head.Position + (bestTarget.HumanoidRootPart.Velocity * 0.1)
+            local desiredCFrame = CFrame.lookAt(camera.CFrame.Position, targetPos)
+            camera.CFrame = camera.CFrame:Lerp(desiredCFrame, 0.15)
+        end
+    end
+
+    if espEnabled then
+        -- Actualizar targets automáticamente
+        updateTargets()
+
+        for _, target in ipairs(targets) do
+            if not espObjects[target] then
+                createBillboard(target)
+            end
+
+            if espObjects[target] and espObjects[target].label then
+                espObjects[target].label.TextColor3 = rgbColor
+            end
+
+            if espObjects[target] and espObjects[target].tracer then
+                local targetTorsoPos, onScreen = camera:WorldToViewportPoint(target.HumanoidRootPart.Position)
+                if onScreen then
+                    local targetVec = Vector2.new(targetTorsoPos.X, targetTorsoPos.Y)
+                    espObjects[target].tracer.From = center  -- Corregido: desde el centro de la pantalla
+                    espObjects[target].tracer.To = targetVec
+                    espObjects[target].tracer.Visible = true
+                else
+                    espObjects[target].tracer.Visible = false
+                end
+            end
+        end
+
+        -- Limpiar espObjects para targets que ya no existen
+        for target, objs in pairs(espObjects) do
+            if not table.find(targets, target) or not target.Parent or not target:FindFirstChild("HumanoidRootPart") then
+                if objs.billboard then objs.billboard:Destroy() end
+                if objs.highlight then objs.highlight:Destroy() end
+                if objs.tracer then objs.tracer:Remove() end
+                espObjects[target] = nil
+            end
+        end
+    end
+end)
+
+-- Eventos para actualizar ESP automáticamente
+game.Players.PlayerAdded:Connect(function(plr)
+    if espEnabled and plr ~= player then
+        plr.CharacterAdded:Connect(function(char)
+            updateTargets()
+            createBillboard(char)
+        end)
+        if plr.Character then
+            updateTargets()
+            createBillboard(plr.Character)
+        end
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(plr)
+    if espEnabled then
+        updateTargets()
+    end
+end)
+
+print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version]")
