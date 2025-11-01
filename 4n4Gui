@@ -218,6 +218,21 @@ userInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- Nueva función para calcular el punto en el borde de la pantalla hacia un target fuera de vista
+local function getScreenEdgePoint(center, targetVec, screenSize)
+    local direction = (targetVec - center)
+    if direction.Magnitude == 0 then return center end
+    direction = direction.Unit
+    local maxX = screenSize.X / 2
+    local maxY = screenSize.Y / 2
+
+    local tX = maxX / math.abs(direction.X)
+    local tY = maxY / math.abs(direction.Y)
+    local t = math.min(tX, tY)
+
+    return center + direction * t
+end
+
 local time = 0
 runService.RenderStepped:Connect(function(dt)
     time = time + dt
@@ -271,14 +286,15 @@ runService.RenderStepped:Connect(function(dt)
 
             if espObjects[target] and espObjects[target].tracer then
                 local targetTorsoPos, onScreen = camera:WorldToViewportPoint(target.HumanoidRootPart.Position)
+                local targetVec = Vector2.new(targetTorsoPos.X, targetTorsoPos.Y)
                 if onScreen then
-                    local targetVec = Vector2.new(targetTorsoPos.X, targetTorsoPos.Y)
-                    espObjects[target].tracer.From = center  -- Corregido: desde el centro de la pantalla
                     espObjects[target].tracer.To = targetVec
-                    espObjects[target].tracer.Visible = true
                 else
-                    espObjects[target].tracer.Visible = false
+                    -- Calcular punto en el borde de la pantalla
+                    local edgePoint = getScreenEdgePoint(center, targetVec, screenSize)
+                    espObjects[target].tracer.To = edgePoint
                 end
+                espObjects[target].tracer.Visible = true  -- Siempre visible cuando ESP está activado
             end
         end
 
@@ -314,4 +330,4 @@ game.Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
-print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version with keybinds and lock-on aimbot]")
+print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version with keybinds, lock-on aimbot, and off-screen tracers]")
