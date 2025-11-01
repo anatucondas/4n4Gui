@@ -10,6 +10,7 @@ local dragging = false
 local dragStart, startPos
 local userInputService = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
+local lockedTarget = nil  -- Nueva variable para lock-on del aimbot
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdvancedESPGui"
@@ -207,6 +208,16 @@ closeButton.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
+-- Nueva función para detectar inputs de teclado
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.C then
+        toggleESP()
+    elseif input.KeyCode == Enum.KeyCode.X then
+        toggleAimbot()
+    end
+end)
+
 local time = 0
 runService.RenderStepped:Connect(function(dt)
     time = time + dt
@@ -215,27 +226,34 @@ runService.RenderStepped:Connect(function(dt)
     local center = Vector2.new(screenSize.X / 2, screenSize.Y / 2)
 
     if aimbotEnabled and userInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local bestTarget = nil
-        local bestDist = math.huge
-
-        for _, target in ipairs(targets) do
-            if target.Parent and target:FindFirstChild("Head") and target:FindFirstChild("HumanoidRootPart") then
-                local screenPos, onScreen = camera:WorldToViewportPoint(target.Head.Position)
-                if onScreen and screenPos.Z > 0 then
-                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                    if dist <= fovSize and dist < bestDist then
-                        bestDist = dist
-                        bestTarget = target
+        if not lockedTarget then
+            -- Buscar el mejor target para lockear
+            local bestTarget = nil
+            local bestDist = math.huge
+            for _, target in ipairs(targets) do
+                if target.Parent and target:FindFirstChild("Head") and target:FindFirstChild("HumanoidRootPart") then
+                    local screenPos, onScreen = camera:WorldToViewportPoint(target.Head.Position)
+                    if onScreen and screenPos.Z > 0 then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist <= fovSize and dist < bestDist then
+                            bestDist = dist
+                            bestTarget = target
+                        end
                     end
                 end
             end
+            lockedTarget = bestTarget
         end
 
-        if bestTarget then
-            local targetPos = bestTarget.Head.Position + (bestTarget.HumanoidRootPart.Velocity * 0.1)
+        if lockedTarget and lockedTarget.Parent and lockedTarget:FindFirstChild("Head") and lockedTarget:FindFirstChild("HumanoidRootPart") then
+            local targetPos = lockedTarget.Head.Position + (lockedTarget.HumanoidRootPart.Velocity * 0.1)
             local desiredCFrame = CFrame.lookAt(camera.CFrame.Position, targetPos)
             camera.CFrame = camera.CFrame:Lerp(desiredCFrame, 0.15)
+        else
+            lockedTarget = nil  -- Reset si el target ya no es válido
         end
+    else
+        lockedTarget = nil  -- Deslockear al soltar RMB
     end
 
     if espEnabled then
@@ -296,4 +314,4 @@ game.Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
-print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version]")
+print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version with keybinds and lock-on aimbot]")
