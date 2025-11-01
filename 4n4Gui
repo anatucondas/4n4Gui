@@ -3,9 +3,12 @@ local camera = workspace.CurrentCamera
 local espEnabled = false
 local fovEnabled = false
 local aimbotEnabled = false
+local itemEspEnabled = false  -- Nueva variable para Item ESP
 local fovSize = 200
 local espObjects = {}
+local itemEspObjects = {}  -- Nueva tabla para objetos de Item ESP
 local targets = {}
+local items = {}  -- Nueva tabla para items
 local dragging = false
 local dragStart, startPos
 local userInputService = game:GetService("UserInputService")
@@ -18,7 +21,7 @@ gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 100)
+frame.Size = UDim2.new(0, 240, 0, 100)  -- Expandido para acomodar el nuevo botón
 frame.Position = UDim2.new(0.02, 0, 0.85, 0)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.BackgroundTransparency = 0
@@ -49,9 +52,10 @@ end
 local espButton = makeButton("ESP", 0, 0)
 local fovButton = makeButton("FOV", 60, 0)
 local aimbotButton = makeButton("Aim", 120, 0)
+local itemEspButton = makeButton("Item ESP", 180, 0)  -- Nuevo botón para Item ESP
 local plusButton = makeButton("+", 0, 50, 30, 50)
 local minusButton = makeButton("-", 30, 50, 30, 50)
-local closeButton = makeButton("X", 60, 50, 120, 50)
+local closeButton = makeButton("X", 60, 50, 180, 50)  -- Ajustado para ocupar el espacio restante
 
 local fovCircle = Instance.new("Frame")
 fovCircle.Name = "FOVCircle"
@@ -97,6 +101,20 @@ local function updateTargets()
     for _, plr in ipairs(game.Players:GetPlayers()) do
         if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("HumanoidRootPart") then
             table.insert(targets, plr.Character)
+        end
+    end
+end
+
+local function updateItems()
+    items = {}
+    local droppedItems = workspace:FindFirstChild("DroppedItems")
+    if droppedItems then
+        for _, item in ipairs(droppedItems:GetChildren()) do
+            if item:IsA("Model") and item.PrimaryPart then
+                table.insert(items, item)
+            elseif item:IsA("BasePart") then
+                table.insert(items, item)
+            end
         end
     end
 end
@@ -163,6 +181,67 @@ local function createBillboard(target)
     end)
 end
 
+local function createBillboardForItem(item)
+    if itemEspObjects[item] then return end  -- Evitar duplicados
+
+    local adornee = item:IsA("Model") and item.PrimaryPart or item
+    if not adornee then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ItemESPTag"
+    billboard.Adornee = adornee
+    billboard.AlwaysOnTop = true
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextStrokeTransparency = 0
+    label.TextStrokeColor3 = Color3.new(0, 0, 0)
+    label.TextColor3 = Color3.fromRGB(255, 255, 0)  -- Amarillo
+    label.Parent = billboard
+
+    billboard.Parent = item
+    itemEspObjects[item] = {billboard = billboard, label = label}
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ItemESPHighlight"
+    highlight.Adornee = item
+    highlight.FillTransparency = 0.3
+    highlight.FillColor = Color3.fromRGB(255, 255, 0)  -- Amarillo
+    highlight.OutlineTransparency = 1
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = item
+    itemEspObjects[item].highlight = highlight
+
+    local tracer = Drawing.new("Line")
+    tracer.Thickness = 2
+    tracer.Color = Color3.fromRGB(255, 255, 0)  -- Amarillo
+    tracer.Transparency = 0.5
+    tracer.Visible = false  -- Inicialmente invisible
+    itemEspObjects[item].tracer = tracer
+
+    -- Loop para actualizar texto y verificar existencia
+    task.spawn(function()
+        while itemEspEnabled and item.Parent do
+            local dist = 0
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                dist = math.floor((player.Character.HumanoidRootPart.Position - adornee.Position).Magnitude)
+            end
+            label.Text = string.format("%s [%dm]", item.Name, dist)
+            task.wait(0.05)
+        end
+        -- Limpiar cuando termine
+        if billboard then billboard:Destroy() end
+        if highlight then highlight:Destroy() end
+        if tracer then tracer:Remove() end
+        itemEspObjects[item] = nil
+    end)
+end
+
 local function toggleESP()
     espEnabled = not espEnabled
     for target, objs in pairs(espObjects) do
@@ -180,6 +259,24 @@ local function toggleESP()
     end
 end
 espButton.MouseButton1Click:Connect(toggleESP)
+
+local function toggleItemESP()
+    itemEspEnabled = not itemEspEnabled
+    for item, objs in pairs(itemEspObjects) do
+        if objs.billboard then objs.billboard:Destroy() end
+        if objs.highlight then objs.highlight:Destroy() end
+        if objs.tracer then objs.tracer:Remove() end
+    end
+    itemEspObjects = {}
+
+    if itemEspEnabled then
+        updateItems()
+        for _, item in ipairs(items) do
+            createBillboardForItem(item)
+        end
+    end
+end
+itemEspButton.MouseButton1Click:Connect(toggleItemESP)
 
 local function toggleFOV()
     fovEnabled = not fovEnabled
@@ -215,6 +312,8 @@ userInputService.InputBegan:Connect(function(input, gameProcessed)
         toggleESP()
     elseif input.KeyCode == Enum.KeyCode.X then
         toggleAimbot()
+    elseif input.KeyCode == Enum.KeyCode.P then  -- Nueva tecla para Item ESP
+        toggleItemESP()
     end
 end)
 
@@ -292,6 +391,42 @@ runService.RenderStepped:Connect(function(dt)
             end
         end
     end
+
+    if itemEspEnabled then
+        -- Actualizar items automáticamente
+        updateItems()
+
+        for _, item in ipairs(items) do
+            if not itemEspObjects[item] then
+                createBillboardForItem(item)
+            end
+
+            if itemEspObjects[item] and itemEspObjects[item].tracer then
+                local adornee = item:IsA("Model") and item.PrimaryPart or item
+                if adornee then
+                    local itemPos, onScreen = camera:WorldToViewportPoint(adornee.Position)
+                    if onScreen then
+                        local itemVec = Vector2.new(itemPos.X, itemPos.Y)
+                        itemEspObjects[item].tracer.From = center
+                        itemEspObjects[item].tracer.To = itemVec
+                        itemEspObjects[item].tracer.Visible = true
+                    else
+                        itemEspObjects[item].tracer.Visible = false
+                    end
+                end
+            end
+        end
+
+        -- Limpiar itemEspObjects para items que ya no existen
+        for item, objs in pairs(itemEspObjects) do
+            if not table.find(items, item) or not item.Parent then
+                if objs.billboard then objs.billboard:Destroy() end
+                if objs.highlight then objs.highlight:Destroy() end
+                if objs.tracer then objs.tracer:Remove() end
+                itemEspObjects[item] = nil
+            end
+        end
+    end
 end)
 
 -- Eventos para actualizar ESP automáticamente
@@ -314,4 +449,4 @@ game.Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
-print("[✅ Advanced ESP + FOV + Aimbot loaded successfully - Improved version with keybinds and lock-on aimbot]")
+-- Evento para
