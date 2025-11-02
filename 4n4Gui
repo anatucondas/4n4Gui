@@ -14,6 +14,7 @@ local dragStart, startPos
 local userInputService = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
 local lockedTarget = nil  -- Nueva variable para lock-on del aimbot
+local inventoryFrame = nil  -- Nueva variable para el mini frame del inventario
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdvancedESPGui"
@@ -317,6 +318,86 @@ userInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- Nueva función para crear el mini frame del inventario
+local function createInventoryFrame(targetPlayer)
+    if inventoryFrame then inventoryFrame:Destroy() end
+    inventoryFrame = Instance.new("Frame")
+    inventoryFrame.Size = UDim2.new(0, 200, 0, 300)
+    inventoryFrame.Position = UDim2.new(0, 10, 0.5, -150)  -- A la izquierda, centrado verticalmente
+    inventoryFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    inventoryFrame.BackgroundTransparency = 0.5
+    inventoryFrame.Parent = gui
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.Font = Enum.Font.Gotham
+    titleLabel.TextSize = 18
+    titleLabel.Text = "Inventario de " .. targetPlayer.Name
+    titleLabel.Parent = inventoryFrame
+
+    local scrollingFrame = Instance.new("ScrollingFrame")
+    scrollingFrame.Size = UDim2.new(1, 0, 1, -30)
+    scrollingFrame.Position = UDim2.new(0, 0, 0, 30)
+    scrollingFrame.BackgroundTransparency = 1
+    scrollingFrame.ScrollBarThickness = 10
+    scrollingFrame.Parent = inventoryFrame
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Parent = scrollingFrame
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    -- Obtener inventario
+    local inventoryFolder = game.ReplicatedStorage.Players:FindFirstChild(targetPlayer.Name):FindFirstChild("Inventory")
+    if inventoryFolder then
+        local children = inventoryFolder:GetChildren()
+        if #children > 0 then
+            for _, itemObj in ipairs(children) do
+                if itemObj:IsA("ObjectValue") then
+                    local itemLabel = Instance.new("TextLabel")
+                    itemLabel.Size = UDim2.new(1, 0, 0, 25)
+                    itemLabel.BackgroundTransparency = 1
+                    itemLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    itemLabel.Font = Enum.Font.Gotham
+                    itemLabel.TextSize = 14
+                    itemLabel.Text = itemObj.Name  -- Solo el nombre del ObjectValue
+                    itemLabel.Parent = scrollingFrame
+                end
+            end
+        else
+            -- Si no hay items, mostrar mensaje
+            local noItemsLabel = Instance.new("TextLabel")
+            noItemsLabel.Size = UDim2.new(1, 0, 0, 25)
+            noItemsLabel.BackgroundTransparency = 1
+            noItemsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            noItemsLabel.Font = Enum.Font.Gotham
+            noItemsLabel.TextSize = 14
+            noItemsLabel.Text = "Inventario vacío"
+            noItemsLabel.Parent = scrollingFrame
+        end
+    else
+        -- Si no se encuentra el folder, mostrar mensaje
+        local errorLabel = Instance.new("TextLabel")
+        errorLabel.Size = UDim2.new(1, 0, 0, 25)
+        errorLabel.BackgroundTransparency = 1
+        errorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        errorLabel.Font = Enum.Font.Gotham
+        errorLabel.TextSize = 14
+        errorLabel.Text = "No se pudo acceder al inventario"
+        errorLabel.Parent = scrollingFrame
+    end
+end
+
+-- Nueva función para destruir el mini frame del inventario
+local function destroyInventoryFrame()
+    if inventoryFrame then
+        inventoryFrame:Destroy()
+        inventoryFrame = nil
+    end
+end
+
 local time = 0
 runService.RenderStepped:Connect(function(dt)
     time = time + dt
@@ -342,6 +423,13 @@ runService.RenderStepped:Connect(function(dt)
                 end
             end
             lockedTarget = bestTarget
+            if lockedTarget then
+                -- Crear el mini frame del inventario
+                local targetPlayer = game.Players:GetPlayerFromCharacter(lockedTarget)
+                if targetPlayer then
+                    createInventoryFrame(targetPlayer)
+                end
+            end
         end
 
         if lockedTarget and lockedTarget.Parent and lockedTarget:FindFirstChild("Head") and lockedTarget:FindFirstChild("HumanoidRootPart") then
@@ -350,9 +438,11 @@ runService.RenderStepped:Connect(function(dt)
             camera.CFrame = camera.CFrame:Lerp(desiredCFrame, 0.15)
         else
             lockedTarget = nil  -- Reset si el target ya no es válido
+            destroyInventoryFrame()  -- Destruir el frame si no hay target
         end
     else
         lockedTarget = nil  -- Deslockear al soltar RMB
+        destroyInventoryFrame()  -- Destruir el frame al deslockear
     end
 
     if espEnabled then
@@ -449,4 +539,9 @@ game.Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
--- Evento para
+-- Evento para actualizar items automáticamente (si es necesario)
+workspace.ChildAdded:Connect(function(child)
+    if itemEspEnabled and child.Name == "DroppedItems" then
+        updateItems()
+    end
+end)
